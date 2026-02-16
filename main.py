@@ -4,8 +4,8 @@ import os
 from OCR import pipeline
   
 
-TOKEN = "8283056976:AAHUng7KPhGV3231Kk8rA2tJEPFrBlG1YME"
 
+TOKEN = os.getenv("BOT_TOKEN")
 # ---- Bot Handlers ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Send me an image, and I'll return the recognized text as a file.")
@@ -47,3 +47,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
