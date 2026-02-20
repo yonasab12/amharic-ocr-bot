@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Amharic OCR</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        #result { margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        button { margin-top: 10px; padding: 8px 12px; }
+        .copy-btn { background: #007bff; color: white; border: none; cursor: pointer; }
+        .copy-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Amharic OCR</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Upload & Recognize</button>
+    </form>
+
+    <div id="result" style="display:none;">
+        <strong>Detected Text:</strong>
+        <p id="textOutput"></p>
+        <button class="copy-btn" onclick="copyText()">Copy to Clipboard</button>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('result');
+            const textOutput = document.getElementById('textOutput');
+
+            resultDiv.style.display = 'none';
+            textOutput.innerText = 'Processing...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                textOutput.innerText = data.text || 'No text detected';
+                resultDiv.style.display = 'block';
+            } catch (err) {
+                textOutput.innerText = 'Error: ' + err.message;
+                resultDiv.style.display = 'block';
+            }
+        });
+
+        function copyText() {
+            const text = document.getElementById('textOutput').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy');
+            });
+        }
+    </script>
+</body>
+</html>
