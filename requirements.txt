@@ -2,10 +2,10 @@ flask==3.0.3
 python-multipart==0.0.9
 torch==2.4.1+cpu
 torchvision==0.19.1+cpu
---find-links https://download.pytorch.org/whl/torch_stable.html
 ultralytics==8.2.101
 opencv-python==4.10.0.84
 numpy==1.26.4
+
 
 
 
