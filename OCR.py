@@ -1,74 +1,46 @@
+# OCR.py (modified)
 import cv2
-import os
+import tempfile
 import shutil
-from YOLO import YOLO_cropper, YOLO_Interface
+import os
+from YOLO import YOLO_cropper
 from CRNN import CNNR_Interface
 
-BW_img_loc = 'BW_read_img.jpg'
-cropped_imgs_loc = 'cropped_words'
-
-def to_black_and_white(image_path, save_path=None, white_thresh=200):
-    
-    # Read image
+def to_black_and_white(image_path, save_path):
     img = cv2.imread(image_path)
-
-    # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    if save_path:
-        cv2.imwrite(save_path, gray)
-
+    cv2.imwrite(save_path, gray)
     return gray
 
-def clear_folder(folder_path):
-    # Create folder if it does not exist
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        print(f"📁 Created folder '{folder_path}'")
-        return
-
-    # Clear existing contents
-    for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.remove(file_path)  # Remove file or symlink
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)  # Remove subdirectory
-        except Exception as e:
-            print(f"⚠️ Failed to delete {file_path}. Reason: {e}")
-
-    print(f"✅ Cleared all contents in '{folder_path}'")
-
 def pipeline(img_path, bw=False):
-    to_black_and_white(image_path=img_path, save_path=BW_img_loc)
-    detected_text = ""
-    path = img_path
+    # Create a temporary directory for all intermediate files
+    temp_dir = tempfile.mkdtemp()
+    bw_path = os.path.join(temp_dir, 'bw.jpg')
+    cropped_dir = os.path.join(temp_dir, 'cropped_words')
+
+    # Convert to BW if requested
     if bw:
-        path = BW_img_loc
+        to_black_and_white(img_path, bw_path)
+        process_path = bw_path
+    else:
+        process_path = img_path
 
-    clear_folder(cropped_imgs_loc)
-    print("done cleaning")
-
-    #YOLO_Interface(path)
-    #print("done locating")
-
-    rows = YOLO_cropper(path)
+    # Run YOLO cropping
+    rows = YOLO_cropper(process_path, cropped_dir)
     if not rows:
+        shutil.rmtree(temp_dir)
         return "❌ No text detected."
 
-    # Process rows separately
+    # Process each crop with CRNN
     line_texts = []
     for row in rows:
         words = []
         for loc in row:
             words.append(CNNR_Interface(loc))
-        line_texts.append(" ".join(words))  # join words in a row
+        line_texts.append(" ".join(words))
 
-    detected_text = "\n".join(line_texts)  # join rows with newlines
+    detected_text = "\n".join(line_texts)
 
-    clear_folder(cropped_imgs_loc)
+    # Clean up temp dir
+    shutil.rmtree(temp_dir)
     return detected_text.strip()
-
-if __name__ == '__main__':
-    print(pipeline(img_path='BW_read_img.jpg', bw=True))
